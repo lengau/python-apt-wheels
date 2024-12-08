@@ -1,0 +1,5 @@
+name: 'Build python-apt for Noble'
+description: 'Build python-apt for Noble'
+runs:
+  using: 'docker'
+  image: '../Dockerfile.noble'

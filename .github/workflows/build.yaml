@@ -9,7 +9,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: ./build-jammy
+      - name: Build Jammy wheel
+        uses: ./build-jammy
+      - name: Build Noble wheel
+        uses: ./build-noble
+      - name: Build Oracular wheel
+        uses: ./build-oracular
       - uses: actions/upload-artifact@v4
         with:
           name: "wheels"
