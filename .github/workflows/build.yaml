@@ -4,6 +4,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   build:
     strategy:
@@ -23,3 +27,11 @@ jobs:
         with:
           name: wheel-${{ matrix.series }}-${{ matrix.arch }}
           path: "*.whl"
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: |
+          gh release create $(date -I)-${{ github.job }} *.whl
