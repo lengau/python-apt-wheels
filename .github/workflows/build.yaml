@@ -20,9 +20,12 @@ jobs:
       - name: Setup qemu
         run: |
           docker run --privileged --rm tonistiigi/binfmt --install all
+      - name: Build images
+        run: |
+          make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
       - name: Build wheels
         run: |
-          make ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
+          make wheel ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.series }}-${{ matrix.arch }}
