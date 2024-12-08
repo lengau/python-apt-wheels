@@ -6,16 +6,20 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        arch: [amd64, arm64, ppc64le, riscv64, s390x]
+        series: [jammy, noble, oracular]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build Jammy wheel
-        uses: ./build-jammy
-      - name: Build Noble wheel
-        uses: ./build-noble
-      - name: Build Oracular wheel
-        uses: ./build-oracular
+      - name: Setup qemu
+        run: |
+          docker run --privileged --rm tonistiigi/binfmt --install all
+      - name: Build wheels
+        run: |
+          make ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
       - uses: actions/upload-artifact@v4
         with:
-          name: "wheels"
+          name: wheel-${{ matrix.series }}-${{ matrix.arch }}
           path: "*.whl"
