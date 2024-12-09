@@ -39,4 +39,4 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
       - run: |
-          gh release create $(date -I)-${{ github.job }} *.whl
+          gh release create $(date -I)-${{ github.job }} */*.whl
