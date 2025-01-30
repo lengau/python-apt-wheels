@@ -2,7 +2,6 @@ FROM ubuntu:22.04
 
 RUN sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get --yes full-upgrade
 RUN DEBIAN_FRONTEND=noninteractive apt-get build-dep --yes python3-apt
 RUN DEBIAN_FRONTEND=noninteractive apt-get install --yes python3-wheel python3-venv python3-build
 RUN DEBIAN_FRONTEND=noninteractive apt-get install --yes curl
