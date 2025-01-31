@@ -15,14 +15,20 @@ jobs:
   build:
     strategy:
       matrix:
-        arch: [amd64, arm64, ppc64le, riscv64, s390x]
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
         series: [jammy, noble, oracular]
-    runs-on: ubuntu-24.04
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+      fail-fast: false
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      - name: Setup qemu
-        run: |
-          docker run --privileged --rm tonistiigi/binfmt --install all
+      # - name: Setup qemu
+      #   run: |
+      #     docker run --privileged --rm tonistiigi/binfmt --install all
       - name: Build images
         run: |
           make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
