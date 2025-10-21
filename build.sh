@@ -14,7 +14,7 @@ export DEBVER="$(apt-cache show python3-apt|grep Version | head -n 1|cut -d' ' -
 
 export MAKEOPTS="-j$(nproc)"
 
-for UV_PYTHON in 3.10 3.11 3.12 3.13 3.14; do
+for UV_PYTHON in 3.10 3.11 3.12 3.13 3.14 3.14t; do
     export UV_PYTHON
     /root/.local/bin/uv venv
     /root/.local/bin/uv pip install setuptools
