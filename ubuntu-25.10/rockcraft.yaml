@@ -1,0 +1,64 @@
+name: python-apt-wheels
+base: bare
+build-base: ubuntu@25.10
+adopt-info: wheels
+summary: Wheels for python-apt
+description: Wheels for python-apt
+platforms: # the platforms this rock should be built on and run on
+  amd64:
+  arm64:
+  armhf:
+  ppc64el:
+  riscv64:
+  s390x:
+
+# package-repositories:
+#   - type: apt
+#     formats: [deb, deb-src]
+#     components:
+#       - main
+#       - restricted
+#       - universe
+#       - multiverse
+#     suites:
+#       - questing
+#     url: http://archive.ubuntu.com/ubuntu
+#     key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
+  # - type: apt
+  #   formats: [deb, deb-src]
+  #   components:
+  #     - main
+  #     - restricted
+  #     - universe
+  #     - multiverse
+  #   suites:
+  #     - questing
+  #   url: http://ports.ubuntu.com/
+  #   key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
+
+parts:
+  wheels:
+    plugin: nil
+    build-snaps:
+      - astral-uv
+    build-packages:
+      - python3.13-dev
+      - python3.14-dev
+      - python-apt-dev
+      - libapt-pkg-dev
+    override-pull: |
+      sed -i 's/deb/deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
+      apt-get update
+      apt-get --yes full-upgrade
+    override-build: |
+      apt source python-apt
+      export GLIBC_VERSION="$(ldd --version | grep GLIBC | cut -d' ' -f4 | cut -d- -f1 | tr . _)"
+      export DEBVER="$(apt-cache show python3-apt|grep Version | head -n 1|cut -d' ' -f2)"
+      craftctl set version="${DEBVER}"
+      cd python-apt-*[0-9]
+      for python_version in 3.8 3.9 3.10 3.11 3.12 3.13 3.14 3.14t; do
+        uv venv --python=$python_version venv-$python_version
+        VIRTUAL_ENV=venv-$python_version uv run --python=$python_version --with=setuptools setup.py bdist_wheel --plat-name "manylinux_${GLIBC_VERSION}_$(uname -m)" --dist-dir "${CRAFT_PART_INSTALL}"
+      done
+      # Wait for all jobs to complete.
+      while fg; do true; done
