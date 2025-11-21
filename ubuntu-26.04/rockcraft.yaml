@@ -23,7 +23,7 @@ parts:
       - python-apt-dev
       - libapt-pkg-dev
     override-pull: |
-      sed -i 's/deb/deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
+      sed -i 's/deb/deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources || sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
       apt-get update
       apt-get --yes full-upgrade
     override-build: |
