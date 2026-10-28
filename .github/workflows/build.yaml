@@ -4,6 +4,33 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: "Architecture to force rebuild ('all' for all architectures)"
+        required: false
+        type: choice
+        options:
+          - all
+          - amd64
+          - arm64
+          - armhf
+          - s390x
+          - ppc64el
+          - riscv64
+        default: all
+      series:
+        description: "Ubuntu series to force rebuild ('all' for all series)"
+        required: false
+        type: choice
+        options:
+          - all
+          - focal
+          - jammy
+          - noble
+          - resolute
+          - stonking
+        default: all
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -46,7 +73,10 @@ jobs:
       - name: Check if latest version already released
         id: check
         run: |
-          python3 check_package_version.py "${{ matrix.series }}" "${{ matrix.arch }}"
+          python3 check_package_version.py "${{ matrix.series }}" "${{ matrix.arch }}" \
+            --event="${{ github.event_name }}" \
+            --target-arch="${{ inputs.arch }}" \
+            --target-series="${{ inputs.series }}"
       - name: Set up QEMU
         if: steps.check.outputs.skip != 'true' && matrix.emulate
         uses: docker/setup-qemu-action@v3
@@ -69,7 +99,7 @@ jobs:
           path: "*.whl"
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     env:

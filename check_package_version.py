@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check Launchpad for latest python-apt version in series and compare against existing releases."""
 
+import argparse
 import json
 import os
 import subprocess
@@ -25,12 +26,18 @@ def get_pep440_version(deb_ver: str) -> str:
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: check_package_version.py <series> <arch>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Check Launchpad and GitHub releases for python-apt wheels.")
+    parser.add_argument("series", help="Ubuntu series")
+    parser.add_argument("arch", help="Target architecture")
+    parser.add_argument("--event", default="", help="GitHub workflow trigger event name")
+    parser.add_argument("--target-arch", default=None, help="Target architecture for workflow_dispatch")
+    parser.add_argument("--target-series", default=None, help="Target series for workflow_dispatch")
+    parser.add_argument("--force", action="store_true", help="Force rebuild regardless of existing releases")
 
-    series = sys.argv[1]
-    arch = sys.argv[2]
+    args = parser.parse_args()
+
+    series = args.series
+    arch = args.arch
     arch_to_wheel = {
         "amd64": "x86_64",
         "arm64": "aarch64",
@@ -43,6 +50,26 @@ def main():
         "risc-v": "riscv64",
     }
     wheel_arch = arch_to_wheel.get(arch, arch)
+
+    if args.event == "workflow_dispatch":
+        target_arch = args.target_arch or "all"
+        target_series = args.target_series or "all"
+        arch_matches = (target_arch == "all") or (target_arch == arch)
+        series_matches = (target_series == "all") or (target_series == series)
+
+        if not (arch_matches and series_matches):
+            print(f"Skipping {series} ({arch}): not targeted by workflow_dispatch (target arch: {target_arch}, target series: {target_series}).")
+            set_output(skip=True)
+            return
+
+        print(f"Force-rebuild requested via workflow_dispatch for {series} ({arch}). Proceeding with build.")
+        set_output(skip=False)
+        return
+
+    if args.force:
+        print(f"Force rebuild explicitly requested for {series} ({arch}). Proceeding with build.")
+        set_output(skip=False)
+        return
 
     url = "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=python-apt&exact_match=true&status=Published"
     req = urllib.request.Request(url, headers={"User-Agent": "python-apt-wheels-ci"})
