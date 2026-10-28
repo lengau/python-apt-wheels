@@ -29,9 +29,12 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build images
         run: |
-          make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
+          make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }} \
+            BUILD_ARGS="--load --cache-from type=gha,scope=${{ matrix.series }}-${{ matrix.arch }} --cache-to type=gha,mode=max,scope=${{ matrix.series }}-${{ matrix.arch }}"
       - name: Build wheels
         run: |
           make wheel ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
