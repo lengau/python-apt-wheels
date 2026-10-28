@@ -12,6 +12,25 @@ cd python-apt-*
 export GLIBC_VERSION="$(ldd --version | grep GLIBC | cut -d' ' -f4 | cut -d- -f1 | tr . _)"
 export DEBVER="$(apt-cache show python3-apt|grep Version | head -n 1|cut -d' ' -f2)"
 
+TARGET_ARCH="${ARCH:-$(dpkg --print-architecture 2>/dev/null || uname -m)}"
+case "$TARGET_ARCH" in
+    armhf)
+        WHEEL_ARCH="armv7l"
+        ;;
+    arm64|aarch64)
+        WHEEL_ARCH="aarch64"
+        ;;
+    amd64|x86_64)
+        WHEEL_ARCH="x86_64"
+        ;;
+    ppc64el|ppc64le)
+        WHEEL_ARCH="ppc64le"
+        ;;
+    *)
+        WHEEL_ARCH="$TARGET_ARCH"
+        ;;
+esac
+
 export MAKEOPTS="-j$(nproc)"
 
 for UV_PYTHON in 3.6 3.7 3.8 3.9 3.10 3.11 3.12 3.13 3.14 3.14t; do
@@ -23,7 +42,7 @@ for UV_PYTHON in 3.6 3.7 3.8 3.9 3.10 3.11 3.12 3.13 3.14 3.14t; do
     fi
     /root/.local/bin/uv pip install setuptools wheel
     source .venv/bin/activate
-    python3 -c "import setuptools; exec(open('setup.py').read())" bdist_wheel --dist-dir /github/workspace --plat-name "manylinux_${GLIBC_VERSION}_$(uname -m)" || {
+    python3 -c "import setuptools; exec(open('setup.py').read())" bdist_wheel --dist-dir /github/workspace --plat-name "manylinux_${GLIBC_VERSION}_${WHEEL_ARCH}" || {
         echo "Skipping build for unsupported Python $UV_PYTHON on this system"
     }
     deactivate

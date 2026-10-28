@@ -30,7 +30,7 @@ build-image:
 
 .PHONY: wheel
 wheel:
-	$(CONTAINER_ENGINE) run --platform $(PLATFORM) -v $(PWD):/github/workspace python-apt:$(SERIES)
+	$(CONTAINER_ENGINE) run --platform $(PLATFORM) -e ARCH=$(ARCH) -v $(PWD):/github/workspace python-apt:$(SERIES)
 
 prepare-image:
 	rm -f $(SERIES)-server-cloudimg-$(ARCH).img
