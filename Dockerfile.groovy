@@ -1,0 +1,14 @@
+FROM ubuntu:20.10
+
+RUN sed -i -E 's|(archive|security|ports).ubuntu.com(/ubuntu-ports)?|old-releases.ubuntu.com|g' /etc/apt/sources.list
+RUN sed -i '/partner/d' /etc/apt/sources.list
+RUN sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get build-dep --yes python3-apt
+RUN DEBIAN_FRONTEND=noninteractive apt-get install --yes python3-wheel python3-venv
+RUN DEBIAN_FRONTEND=noninteractive apt-get install --yes curl
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+COPY build.sh /build.sh
+
+ENTRYPOINT ["/build.sh"]

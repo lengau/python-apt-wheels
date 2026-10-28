@@ -11,9 +11,22 @@ Hosted as a static PEP 503 simple repository via GitHub Pages:
 
 | Ubuntu Series | Version | Default CPython Versions | Architectures |
 |---------------|---------|--------------------------|---------------|
+| **Bionic** | 18.04 | 3.6 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el |
+| **Cosmic** | 18.10 | 3.6 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el |
+| **Disco** | 19.04 | 3.7 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el |
+| **Eoan** | 19.10 | 3.7 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el |
 | **Focal** | 20.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Groovy** | 20.10 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Hirsute** | 21.04 | 3.9 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Impish** | 21.10 | 3.9 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
 | **Jammy** | 22.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Kinetic** | 22.10 | 3.10 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el |
+| **Lunar** | 23.04 | 3.11 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el |
+| **Mantic** | 23.10 | 3.11 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el |
 | **Noble** | 24.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Oracular** | 24.10 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Plucky** | 25.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Questing** | 25.10 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
 | **Resolute** | 26.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
 | **Stonking** | 26.10 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
 
