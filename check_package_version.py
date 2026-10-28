@@ -26,8 +26,14 @@ def main():
         sys.exit(1)
 
     series = sys.argv[1]
-    arch = sys.argv[2]  # amd64 or arm64
-    wheel_arch = "x86_64" if arch == "amd64" else "aarch64"
+    arch = sys.argv[2]
+    arch_to_wheel = {
+        "amd64": "x86_64",
+        "arm64": "aarch64",
+        "armhf": "armv7l",
+        "armv7l": "armv7l",
+    }
+    wheel_arch = arch_to_wheel.get(arch, arch)
 
     url = "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=python-apt&exact_match=true&status=Published"
     req = urllib.request.Request(url, headers={"User-Agent": "python-apt-wheels-ci"})
