@@ -3,10 +3,10 @@ on:
   push:
     branches:
       - main
-      - feat/*
+  pull_request:
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -27,20 +27,41 @@ jobs:
             arch: arm64
       fail-fast: false
     runs-on: ${{ matrix.runner }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build images
+      - name: Check if latest version already released
+        id: check
         run: |
-          make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
+          python3 check_package_version.py "${{ matrix.series }}" "${{ matrix.arch }}"
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.skip != 'true'
+        uses: docker/setup-buildx-action@v3
+      - name: Build images
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }} \
+            BUILD_ARGS="--load --cache-from type=gha,scope=${{ matrix.series }}-${{ matrix.arch }} --cache-to type=gha,mode=max,scope=${{ matrix.series }}-${{ matrix.arch }}"
       - name: Build wheels
+        if: steps.check.outputs.skip != 'true'
         run: |
           make wheel ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
+      - name: Stage wheels to upload
+        run: |
+          mkdir -p output
+          if [ "${{ steps.check.outputs.skip }}" = "true" ]; then
+            cp existing-wheels/*.whl output/
+          else
+            cp *.whl output/
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.series }}-${{ matrix.arch }}
-          path: "*.whl"
+          path: output/*.whl
 
   release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     env:

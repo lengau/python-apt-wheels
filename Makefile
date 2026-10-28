@@ -13,7 +13,7 @@ endif
 
 .PHONY: build-image
 build-image:
-	$(CONTAINER_ENGINE) build --platform linux/$(GOARCH) -t python-apt:$(SERIES) -f Dockerfile.$(SERIES) .
+	$(CONTAINER_ENGINE) build --platform linux/$(GOARCH) -t python-apt:$(SERIES) -f Dockerfile.$(SERIES) $(BUILD_ARGS) .
 
 .PHONY: wheel
 wheel:
