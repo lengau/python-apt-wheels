@@ -1,5 +1,0 @@
-name: 'Build python-apt for Jammy'
-description: 'Build python-apt for Jammy'
-runs:
-  using: 'docker'
-  image: '../Dockerfile.jammy'
