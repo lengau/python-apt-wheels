@@ -18,13 +18,22 @@ jobs:
   build:
     strategy:
       matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        arch: [amd64, arm64, s390x, ppc64el, riscv64]
         series: [focal, jammy, noble, resolute, stonking]
         include:
-          - runner: ubuntu-24.04
-            arch: amd64
-          - runner: ubuntu-24.04-arm
-            arch: arm64
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+          - arch: s390x
+            runner: ubuntu-24.04
+            emulate: true
+          - arch: ppc64el
+            runner: ubuntu-24.04
+            emulate: true
+          - arch: riscv64
+            runner: ubuntu-24.04
+            emulate: true
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     env:
@@ -35,6 +44,9 @@ jobs:
         id: check
         run: |
           python3 check_package_version.py "${{ matrix.series }}" "${{ matrix.arch }}"
+      - name: Set up QEMU
+        if: steps.check.outputs.skip != 'true' && matrix.emulate
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         if: steps.check.outputs.skip != 'true'
         uses: docker/setup-buildx-action@v3
