@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64, armhf, s390x, ppc64el, riscv64]
-        series: [focal, jammy, noble, resolute, stonking]
+        series: [bionic, focal, jammy, noble, resolute, stonking]
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -64,6 +64,9 @@ jobs:
           - arch: riscv64
             runner: ubuntu-24.04
             emulate: true
+        exclude:
+          - arch: riscv64
+            series: bionic
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     env:

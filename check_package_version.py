@@ -71,7 +71,7 @@ def main():
         set_output(skip=False)
         return
 
-    url = "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=python-apt&exact_match=true&status=Published"
+    url = f"https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=python-apt&exact_match=true&distro_series=https://api.launchpad.net/1.0/ubuntu/{series}"
     req = urllib.request.Request(url, headers={"User-Agent": "python-apt-wheels-ci"})
     try:
         with urllib.request.urlopen(req) as resp:
@@ -83,7 +83,7 @@ def main():
 
     entries = [
         e for e in data.get("entries", [])
-        if e.get("distro_series_link", "").rstrip("/").endswith(f"/{series}")
+        if e.get("status") in ("Published", "Obsolete")
     ]
 
     if not entries:

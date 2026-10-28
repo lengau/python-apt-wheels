@@ -11,6 +11,7 @@ Hosted as a static PEP 503 simple repository via GitHub Pages:
 
 | Ubuntu Series | Version | Default CPython Versions | Architectures |
 |---------------|---------|--------------------------|---------------|
+| **Bionic** | 18.04 | 3.6, 3.8, 3.9 | amd64, arm64, armhf, s390x, ppc64el |
 | **Focal** | 20.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
 | **Jammy** | 22.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
 | **Noble** | 24.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
