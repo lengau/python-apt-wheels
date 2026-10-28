@@ -47,18 +47,11 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         run: |
           make wheel ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
-      - name: Stage wheels to upload
-        run: |
-          mkdir -p output
-          if [ "${{ steps.check.outputs.skip }}" = "true" ]; then
-            cp existing-wheels/*.whl output/
-          else
-            cp *.whl output/
-          fi
       - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.skip != 'true'
         with:
           name: wheel-${{ matrix.series }}-${{ matrix.arch }}
-          path: output/*.whl
+          path: "*.whl"
 
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -71,14 +64,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
+        id: download_artifacts
+        continue-on-error: true
         with:
           path: dist
       - name: Create release
         id: create_release
         run: |
-          TAG="$(date -I)-${{ github.run_number }}"
-          echo "tag_name=${TAG}" >> "$GITHUB_OUTPUT"
-          gh release create "${TAG}" dist/*/*.whl --title "python-apt wheels ${TAG}"
+          if compgen -G "dist/*/*.whl" > /dev/null; then
+            TAG="$(date -I)-${{ github.run_number }}"
+            echo "tag_name=${TAG}" >> "$GITHUB_OUTPUT"
+            gh release create "${TAG}" dist/*/*.whl --title "python-apt wheels ${TAG}"
+          else
+            echo "No new wheels built in this run."
+          fi
 
   deploy-pages:
     needs: [build, release]
@@ -92,6 +91,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           path: dist
       - name: Generate PEP 503 static site
