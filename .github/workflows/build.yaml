@@ -45,7 +45,7 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build-image:
     strategy:
       matrix:
         arch: [amd64, arm64, armhf, s390x, ppc64el, riscv64]
@@ -94,6 +94,69 @@ jobs:
         run: |
           make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }} \
             BUILD_ARGS="--load --cache-from type=gha,scope=${{ matrix.series }}-${{ matrix.arch }} --cache-to type=gha,mode=max,scope=${{ matrix.series }}-${{ matrix.arch }}"
+      - name: Save image
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          docker save python-apt:${{ matrix.series }} -o image.tar
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.skip != 'true'
+        with:
+          name: image-${{ matrix.series }}-${{ matrix.arch }}
+          path: image.tar
+          retention-days: 1
+
+  build-wheels:
+    needs: build-image
+    strategy:
+      matrix:
+        arch: [amd64, arm64, armhf, s390x, ppc64el, riscv64]
+        series: [bionic, focal, jammy, noble, resolute, stonking]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+          - arch: armhf
+            runner: ubuntu-24.04-arm
+            emulate: true
+          - arch: s390x
+            runner: ubuntu-24.04
+            emulate: true
+          - arch: ppc64el
+            runner: ubuntu-24.04
+            emulate: true
+          - arch: riscv64
+            runner: ubuntu-24.04
+            emulate: true
+        exclude:
+          - arch: riscv64
+            series: bionic
+      fail-fast: false
+    runs-on: ${{ matrix.runner }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check if latest version already released
+        id: check
+        run: |
+          python3 check_package_version.py "${{ matrix.series }}" "${{ matrix.arch }}" \
+            --event="${{ github.event_name }}" \
+            --target-arch="${{ inputs.arch }}" \
+            --target-series="${{ inputs.series }}"
+      - name: Set up QEMU
+        if: steps.check.outputs.skip != 'true' && matrix.emulate
+        uses: docker/setup-qemu-action@v3
+      - name: Download image
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: image-${{ matrix.series }}-${{ matrix.arch }}
+      - name: Load image
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          docker load -i image.tar
+          rm -f image.tar
       - name: Build wheels
         if: steps.check.outputs.skip != 'true'
         run: |
@@ -106,7 +169,7 @@ jobs:
 
   release:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main'
-    needs: build
+    needs: build-wheels
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -118,6 +181,7 @@ jobs:
         id: download_artifacts
         continue-on-error: true
         with:
+          pattern: 'wheel-*'
           path: dist
       - name: Create release
         id: create_release
@@ -131,7 +195,7 @@ jobs:
           fi
 
   deploy-pages:
-    needs: [build, release]
+    needs: [build-wheels, release]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -144,6 +208,7 @@ jobs:
       - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
+          pattern: 'wheel-*'
           path: dist
       - name: Generate PEP 503 static site
         run: |
