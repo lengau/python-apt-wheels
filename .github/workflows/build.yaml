@@ -41,6 +41,7 @@ concurrency:
 
 permissions:
   contents: write
+  packages: write
   pages: write
   id-token: write
 
@@ -83,27 +84,26 @@ jobs:
             --event="${{ github.event_name }}" \
             --target-arch="${{ inputs.arch }}" \
             --target-series="${{ inputs.series }}"
+      - name: Log in to GitHub Container Registry
+        if: steps.check.outputs.skip != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       - name: Set up QEMU
         if: steps.check.outputs.skip != 'true' && matrix.emulate
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         if: steps.check.outputs.skip != 'true'
         uses: docker/setup-buildx-action@v3
-      - name: Build images
+      - name: Build and push images
         if: steps.check.outputs.skip != 'true'
         run: |
+          IMAGE_TAG="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):${{ matrix.series }}-${{ matrix.arch }}"
           make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }} \
-            BUILD_ARGS="--load --cache-from type=gha,scope=${{ matrix.series }}-${{ matrix.arch }} --cache-to type=gha,mode=max,scope=${{ matrix.series }}-${{ matrix.arch }}"
-      - name: Save image
-        if: steps.check.outputs.skip != 'true'
-        run: |
-          docker save python-apt:${{ matrix.series }} -o image.tar
-      - uses: actions/upload-artifact@v4
-        if: steps.check.outputs.skip != 'true'
-        with:
-          name: image-${{ matrix.series }}-${{ matrix.arch }}
-          path: image.tar
-          retention-days: 1
+            IMAGE_TAG="${IMAGE_TAG}" \
+            BUILD_ARGS="--push --cache-from type=gha,scope=${{ matrix.series }}-${{ matrix.arch }} --cache-to type=gha,mode=max,scope=${{ matrix.series }}-${{ matrix.arch }}"
 
   build-wheels:
     needs: build-image
@@ -144,23 +144,26 @@ jobs:
             --event="${{ github.event_name }}" \
             --target-arch="${{ inputs.arch }}" \
             --target-series="${{ inputs.series }}"
+      - name: Log in to GitHub Container Registry
+        if: steps.check.outputs.skip != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       - name: Set up QEMU
         if: steps.check.outputs.skip != 'true' && matrix.emulate
         uses: docker/setup-qemu-action@v3
-      - name: Download image
-        if: steps.check.outputs.skip != 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: image-${{ matrix.series }}-${{ matrix.arch }}
-      - name: Load image
+      - name: Pull image
         if: steps.check.outputs.skip != 'true'
         run: |
-          docker load -i image.tar
-          rm -f image.tar
+          IMAGE_TAG="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):${{ matrix.series }}-${{ matrix.arch }}"
+          make pull-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }} IMAGE_TAG="${IMAGE_TAG}"
       - name: Build wheels
         if: steps.check.outputs.skip != 'true'
         run: |
-          make wheel ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
+          IMAGE_TAG="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):${{ matrix.series }}-${{ matrix.arch }}"
+          make wheel ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }} IMAGE_TAG="${IMAGE_TAG}"
       - uses: actions/upload-artifact@v4
         if: steps.check.outputs.skip != 'true'
         with:

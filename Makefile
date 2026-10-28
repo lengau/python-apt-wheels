@@ -15,6 +15,7 @@ CONTAINER_ARCH = $(ARCH)
 endif
 
 PLATFORM ?= linux/$(CONTAINER_ARCH)
+IMAGE_TAG ?= python-apt:$(SERIES)
 
 ifeq ($(ARCH),$(shell dpkg --print-architecture 2>/dev/null))
 QEMU_PARAMS += -enable-kvm
@@ -26,11 +27,15 @@ endif
 
 .PHONY: build-image
 build-image:
-	$(CONTAINER_ENGINE) build --platform $(PLATFORM) -t python-apt:$(SERIES) -f Dockerfile.$(SERIES) $(BUILD_ARGS) .
+	$(CONTAINER_ENGINE) build --platform $(PLATFORM) -t $(IMAGE_TAG) -f Dockerfile.$(SERIES) $(BUILD_ARGS) .
+
+.PHONY: pull-image
+pull-image:
+	$(CONTAINER_ENGINE) pull --platform $(PLATFORM) $(IMAGE_TAG)
 
 .PHONY: wheel
 wheel:
-	$(CONTAINER_ENGINE) run --platform $(PLATFORM) -e ARCH=$(ARCH) -v $(PWD):/github/workspace python-apt:$(SERIES)
+	$(CONTAINER_ENGINE) run --platform $(PLATFORM) -e ARCH=$(ARCH) -v $(PWD):/github/workspace $(IMAGE_TAG)
 
 prepare-image:
 	rm -f $(SERIES)-server-cloudimg-$(ARCH).img

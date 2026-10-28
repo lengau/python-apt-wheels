@@ -106,6 +106,9 @@ Build images and wheels locally using `podman` (or set `CONTAINER_ENGINE=docker`
 # Build image for a series
 make build-image SERIES=noble
 
+# Or pull pre-built images from GitHub Container Registry
+make pull-image SERIES=noble IMAGE_TAG=ghcr.io/lengau/python-apt-wheels:noble-amd64
+
 # Build wheels inside the container
 make wheel SERIES=noble
 ```
