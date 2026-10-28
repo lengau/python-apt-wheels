@@ -17,7 +17,11 @@ def get_pep440_version(deb_ver: str) -> str:
     v = v.replace("ubuntu", "+ubuntu")
     v = v.replace("tanglu", "+tanglu")
     v = v.split("build")[0]
-    return v
+    try:
+        from packaging.version import Version
+        return str(Version(v))
+    except Exception:
+        return v
 
 
 def main():
@@ -30,6 +34,8 @@ def main():
     arch_to_wheel = {
         "amd64": "x86_64",
         "arm64": "aarch64",
+        "armhf": "armv7l",
+        "armv7l": "armv7l",
         "s390x": "s390x",
         "ppc64el": "ppc64le",
         "ppc64le": "ppc64le",
@@ -92,13 +98,6 @@ def main():
         ]
         if matches:
             print(f"Matching wheels for {wheel_ver} ({wheel_arch}) already exist in release '{tag}'. Skipping build.")
-            # Download existing wheels to dist so the release and PEP 503 deployment steps have them
-            os.makedirs("existing-wheels", exist_ok=True)
-            for m in matches:
-                try:
-                    subprocess.check_call(["gh", "release", "download", tag, "-p", m, "-D", "existing-wheels"])
-                except Exception:
-                    pass
             set_output(skip=True)
             return
 

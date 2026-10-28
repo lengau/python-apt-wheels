@@ -6,6 +6,8 @@ ifeq ($(ARCH),x86_64)
 CONTAINER_ARCH = amd64
 else ifeq ($(ARCH),aarch64)
 CONTAINER_ARCH = arm64
+else ifeq ($(ARCH),armhf)
+CONTAINER_ARCH = arm/v7
 else ifeq ($(ARCH),ppc64el)
 CONTAINER_ARCH = ppc64le
 else
