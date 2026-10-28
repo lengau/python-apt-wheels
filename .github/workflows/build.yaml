@@ -18,7 +18,7 @@ jobs:
   build:
     strategy:
       matrix:
-        arch: [amd64, arm64, armhf]
+        arch: [amd64, arm64, armhf, s390x, ppc64el, riscv64]
         series: [focal, jammy, noble, resolute, stonking]
         include:
           - arch: amd64
@@ -27,6 +27,15 @@ jobs:
             runner: ubuntu-24.04-arm
           - arch: armhf
             runner: ubuntu-24.04-arm
+            emulate: true
+          - arch: s390x
+            runner: ubuntu-24.04
+            emulate: true
+          - arch: ppc64el
+            runner: ubuntu-24.04
+            emulate: true
+          - arch: riscv64
+            runner: ubuntu-24.04
             emulate: true
       fail-fast: false
     runs-on: ${{ matrix.runner }}

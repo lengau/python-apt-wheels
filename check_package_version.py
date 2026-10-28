@@ -36,6 +36,11 @@ def main():
         "arm64": "aarch64",
         "armhf": "armv7l",
         "armv7l": "armv7l",
+        "s390x": "s390x",
+        "ppc64el": "ppc64le",
+        "ppc64le": "ppc64le",
+        "riscv64": "riscv64",
+        "risc-v": "riscv64",
     }
     wheel_arch = arch_to_wheel.get(arch, arch)
 

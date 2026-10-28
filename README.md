@@ -1,6 +1,6 @@
 # python-apt Wheels
 
-Pre-built binary wheels for `python-apt` across Ubuntu LTS and interim releases on `x86_64` (amd64), `aarch64` (arm64), and `armv7l` (armhf).
+Pre-built binary wheels for `python-apt` across Ubuntu LTS and interim releases on `x86_64` (amd64), `aarch64` (arm64), `armv7l` (armhf), `s390x`, `ppc64le` (ppc64el), and `riscv64`.
 
 Hosted as a static PEP 503 simple repository via GitHub Pages:
 **`https://lengau.github.io/python-apt-wheels/simple/`**
@@ -11,11 +11,11 @@ Hosted as a static PEP 503 simple repository via GitHub Pages:
 
 | Ubuntu Series | Version | Default CPython Versions | Architectures |
 |---------------|---------|--------------------------|---------------|
-| **Focal** | 20.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf |
-| **Jammy** | 22.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf |
-| **Noble** | 24.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf |
-| **Resolute** | 26.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf |
-| **Stonking** | 26.10 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf |
+| **Focal** | 20.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Jammy** | 22.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Noble** | 24.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Resolute** | 26.04 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
+| **Stonking** | 26.10 | 3.8 – 3.14, 3.14t | amd64, arm64, armhf, s390x, ppc64el, riscv64 |
 
 ---
 
