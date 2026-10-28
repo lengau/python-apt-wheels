@@ -1,6 +1,7 @@
 GOARCH=$(shell go env GOARCH)
 ARCH=$(shell dpkg --print-architecture)
 SERIES=jammy
+CONTAINER_ENGINE ?= $(if $(GITHUB_ACTIONS),docker,podman)
 
 ifeq ($(ARCH),$(shell dpkg --print-architecture))
 QEMU_PARAMS += -enable-kvm
@@ -12,11 +13,11 @@ endif
 
 .PHONY: build-image
 build-image:
-	docker build --platform linux/$(GOARCH) -t python-apt:$(SERIES) -f Dockerfile.$(SERIES) .
+	$(CONTAINER_ENGINE) build --platform linux/$(GOARCH) -t python-apt:$(SERIES) -f Dockerfile.$(SERIES) .
 
 .PHONY: wheel
 wheel:
-	docker run --platform linux/$(GOARCH) -v $(PWD):/github/workspace python-apt:$(SERIES)
+	$(CONTAINER_ENGINE) run --platform linux/$(GOARCH) -v $(PWD):/github/workspace python-apt:$(SERIES)
 
 prepare-image:
 	rm -f $(SERIES)-server-cloudimg-$(ARCH).img

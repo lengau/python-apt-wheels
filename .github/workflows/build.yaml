@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - feat/*
 
 concurrency:
   group: ${{ github.workflow }}
@@ -10,13 +11,15 @@ concurrency:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build:
     strategy:
       matrix:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
-        series: [jammy, noble, plucky, questing]
+        series: [focal, jammy, noble, resolute, stonking]
         include:
           - runner: ubuntu-24.04
             arch: amd64
@@ -26,9 +29,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      # - name: Setup qemu
-      #   run: |
-      #     docker run --privileged --rm tonistiigi/binfmt --install all
       - name: Build images
         run: |
           make build-image ARCH=${{ matrix.arch }} SERIES=${{ matrix.series }}
@@ -40,13 +40,46 @@ jobs:
           name: wheel-${{ matrix.series }}-${{ matrix.arch }}
           path: "*.whl"
 
-  publish:
+  release:
     needs: build
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
+    outputs:
+      tag_name: ${{ steps.create_release.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-      - run: |
-          gh release create $(date -I)-${{ github.job }} */*.whl
+        with:
+          path: dist
+      - name: Create release
+        id: create_release
+        run: |
+          TAG="$(date -I)-${{ github.run_number }}"
+          echo "tag_name=${TAG}" >> "$GITHUB_OUTPUT"
+          gh release create "${TAG}" dist/*/*.whl --title "python-apt wheels ${TAG}"
+
+  deploy-pages:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Generate PEP 503 static site
+        run: |
+          TAG="${{ needs.release.outputs.tag_name }}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+          uv run python generate_index.py dist _site "${RELEASE_URL}"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

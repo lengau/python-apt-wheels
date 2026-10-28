@@ -14,10 +14,15 @@ export DEBVER="$(apt-cache show python3-apt|grep Version | head -n 1|cut -d' ' -
 
 export MAKEOPTS="-j$(nproc)"
 
-for UV_PYTHON in 3.10 3.11 3.12 3.13 3.14 3.14t; do
+for UV_PYTHON in 3.8 3.9 3.10 3.11 3.12 3.13 3.14 3.14t; do
     export UV_PYTHON
-    /root/.local/bin/uv venv
+    rm -rf .venv
+    if ! /root/.local/bin/uv venv --allow-existing 2>/dev/null; then
+        echo "Skipping unsupported Python $UV_PYTHON on this system"
+        continue
+    fi
     /root/.local/bin/uv pip install setuptools
     source .venv/bin/activate
     python3 setup.py bdist_wheel --dist-dir /github/workspace --plat-name "manylinux_${GLIBC_VERSION}_$(uname -m)"
+    deactivate
 done
