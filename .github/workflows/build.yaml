@@ -86,6 +86,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -95,8 +97,7 @@ jobs:
       - name: Generate PEP 503 static site
         run: |
           TAG="${{ needs.release.outputs.tag_name }}"
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
-          uv run python generate_index.py dist _site "${RELEASE_URL}"
+          uv run python generate_index.py dist _site "${{ github.repository }}" "${TAG}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
