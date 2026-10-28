@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - feat/*
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -61,6 +61,7 @@ jobs:
           path: output/*.whl
 
   release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     env:
