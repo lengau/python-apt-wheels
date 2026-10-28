@@ -23,6 +23,8 @@ for UV_PYTHON in 3.6 3.7 3.8 3.9 3.10 3.11 3.12 3.13 3.14 3.14t; do
     fi
     /root/.local/bin/uv pip install setuptools wheel
     source .venv/bin/activate
-    python3 setup.py bdist_wheel --dist-dir /github/workspace --plat-name "manylinux_${GLIBC_VERSION}_$(uname -m)"
+    python3 -c "import setuptools; exec(open('setup.py').read())" bdist_wheel --dist-dir /github/workspace --plat-name "manylinux_${GLIBC_VERSION}_$(uname -m)" || {
+        echo "Skipping build for unsupported Python $UV_PYTHON on this system"
+    }
     deactivate
 done

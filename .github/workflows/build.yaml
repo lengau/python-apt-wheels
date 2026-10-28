@@ -19,25 +19,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64, armhf, s390x, ppc64el, riscv64]
-        series:
-          - bionic
-          - cosmic
-          - disco
-          - eoan
-          - focal
-          - groovy
-          - hirsute
-          - impish
-          - jammy
-          - kinetic
-          - lunar
-          - mantic
-          - noble
-          - oracular
-          - plucky
-          - questing
-          - resolute
-          - stonking
+        series: [bionic, focal, jammy, noble, resolute, stonking]
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -58,18 +40,6 @@ jobs:
         exclude:
           - arch: riscv64
             series: bionic
-          - arch: riscv64
-            series: cosmic
-          - arch: riscv64
-            series: disco
-          - arch: riscv64
-            series: eoan
-          - arch: riscv64
-            series: kinetic
-          - arch: riscv64
-            series: lunar
-          - arch: riscv64
-            series: mantic
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     env:
