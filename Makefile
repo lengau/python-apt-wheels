@@ -1,6 +1,7 @@
 ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || uname -m)
 SERIES ?= jammy
 CONTAINER_ENGINE ?= $(if $(GITHUB_ACTIONS),docker,podman)
+BUILD_ENGINE ?= $(if $(GITHUB_ACTIONS),docker buildx,$(CONTAINER_ENGINE))
 
 ifeq ($(ARCH),x86_64)
 CONTAINER_ARCH = amd64
@@ -29,7 +30,7 @@ endif
 
 .PHONY: build-image
 build-image:
-	$(CONTAINER_ENGINE) build --platform $(PLATFORM) $(TAG_ARG) -f Dockerfile.$(SERIES) $(BUILD_ARGS) .
+	$(BUILD_ENGINE) build --platform $(PLATFORM) $(TAG_ARG) -f Dockerfile.$(SERIES) $(BUILD_ARGS) .
 
 .PHONY: pull-image
 pull-image:
