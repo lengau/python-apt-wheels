@@ -4,6 +4,7 @@
 import argparse
 import base64
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 import os
 import re
@@ -22,7 +23,7 @@ def parse_iso_datetime(dt_str: str) -> datetime | None:
         return None
 
 
-def get_image_created_at(image: str) -> datetime | None:
+def get_image_info(image: str) -> tuple[datetime | None, str | None]:
     # 1. Try skopeo inspect
     try:
         cmd = ["skopeo", "inspect", f"docker://{image}"]
@@ -33,10 +34,10 @@ def get_image_created_at(image: str) -> datetime | None:
         res = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
         data = json.loads(res)
         created_str = data.get("Created")
-        if created_str:
-            dt = parse_iso_datetime(created_str)
-            if dt:
-                return dt
+        digest = data.get("Digest")
+        created_dt = parse_iso_datetime(created_str) if created_str else None
+        if created_dt or digest:
+            return created_dt, digest
     except Exception:
         pass
 
@@ -65,14 +66,17 @@ def get_image_created_at(image: str) -> datetime | None:
             },
         )
         with urllib.request.urlopen(req) as resp:
-            manifest = json.loads(resp.read().decode())
+            raw_manifest = resp.read()
+            digest_hdr = resp.headers.get("docker-content-digest")
+            manifest = json.loads(raw_manifest.decode())
 
+        digest = digest_hdr or ("sha256:" + hashlib.sha256(raw_manifest).hexdigest())
+
+        created_dt = None
         if "annotations" in manifest and "org.opencontainers.image.created" in manifest["annotations"]:
-            dt = parse_iso_datetime(manifest["annotations"]["org.opencontainers.image.created"])
-            if dt:
-                return dt
+            created_dt = parse_iso_datetime(manifest["annotations"]["org.opencontainers.image.created"])
 
-        if "config" in manifest and "digest" in manifest["config"]:
+        if not created_dt and "config" in manifest and "digest" in manifest["config"]:
             blob_digest = manifest["config"]["digest"]
             blob_url = f"https://ghcr.io/v2/{repo_name}/blobs/{blob_digest}"
             req = urllib.request.Request(blob_url, headers={"Authorization": f"Bearer {registry_token}"})
@@ -80,22 +84,26 @@ def get_image_created_at(image: str) -> datetime | None:
                 config = json.loads(resp.read().decode())
                 created_str = config.get("created")
                 if created_str:
-                    dt = parse_iso_datetime(created_str)
-                    if dt:
-                        return dt
+                    created_dt = parse_iso_datetime(created_str)
+
+        return created_dt, digest
     except Exception:
         pass
 
-    return None
+    return None, None
 
 
-def set_output(skip: bool):
+def set_output(skip: bool, digest: str | None = None):
     github_output = os.environ.get("GITHUB_OUTPUT")
     val = "true" if skip else "false"
     if github_output:
         with open(github_output, "a", encoding="utf-8") as f:
             f.write(f"skip={val}\n")
+            if digest:
+                f.write(f"digest={digest}\n")
     print(f"OUTPUT: skip={val}")
+    if digest:
+        print(f"OUTPUT: digest={digest}")
 
 
 def main():
@@ -108,6 +116,7 @@ def main():
     parser.add_argument("--target-arch", default=None, help="Target architecture for workflow_dispatch")
     parser.add_argument("--target-series", default=None, help="Target series for workflow_dispatch")
     parser.add_argument("--force", action="store_true", help="Force rebuild regardless of image age")
+    parser.add_argument("--output-digest-file", default="image-digest.txt", help="Path to write image digest file")
 
     args = parser.parse_args()
 
@@ -137,7 +146,7 @@ def main():
         set_output(skip=False)
         return
 
-    created_dt = get_image_created_at(args.image)
+    created_dt, digest = get_image_info(args.image)
     if not created_dt:
         print(f"Image '{args.image}' not found in registry or creation time unavailable. Proceeding with image build.")
         set_output(skip=False)
@@ -150,10 +159,13 @@ def main():
 
     if age < timedelta(days=args.max_age_days):
         print(f"Image is under {args.max_age_days} days old. Skipping image build.")
-        set_output(skip=True)
+        if digest and args.output_digest_file:
+            with open(args.output_digest_file, "w", encoding="utf-8") as f:
+                f.write(digest.strip() + "\n")
+        set_output(skip=True, digest=digest)
     else:
         print(f"Image is older than {args.max_age_days} days. Proceeding with image build.")
-        set_output(skip=False)
+        set_output(skip=False, digest=digest)
 
 
 if __name__ == "__main__":
