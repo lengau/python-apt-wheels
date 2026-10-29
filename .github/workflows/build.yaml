@@ -77,6 +77,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -91,6 +93,7 @@ jobs:
             --series="${{ matrix.series }}" \
             --arch="${{ matrix.arch }}" \
             --event="${{ github.event_name }}" \
+            --base-ref="${{ github.base_ref }}" \
             --target-arch="${{ inputs.arch }}" \
             --target-series="${{ inputs.series }}"
       - name: Set up QEMU
@@ -153,11 +156,14 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check if latest version already released
         id: check
         run: |
           python3 check_package_version.py "${{ matrix.series }}" "${{ matrix.arch }}" \
             --event="${{ github.event_name }}" \
+            --base-ref="${{ github.base_ref }}" \
             --target-arch="${{ inputs.arch }}" \
             --target-series="${{ inputs.series }}"
       - name: Download image digest
