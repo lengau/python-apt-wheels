@@ -1,6 +1,7 @@
 ARCH ?= $(shell dpkg --print-architecture 2>/dev/null || uname -m)
 SERIES ?= jammy
 CONTAINER_ENGINE ?= $(if $(GITHUB_ACTIONS),docker,podman)
+BUILD_ENGINE ?= $(if $(GITHUB_ACTIONS),docker buildx,$(CONTAINER_ENGINE))
 
 ifeq ($(ARCH),x86_64)
 CONTAINER_ARCH = amd64
@@ -15,6 +16,9 @@ CONTAINER_ARCH = $(ARCH)
 endif
 
 PLATFORM ?= linux/$(CONTAINER_ARCH)
+IMAGE_TAG ?= python-apt:$(SERIES)
+TAG_ARG = $(if $(IMAGE_TAG),-t $(IMAGE_TAG),)
+IMAGE_REF ?= $(if $(IMAGE_TAG),$(IMAGE_TAG),python-apt:$(SERIES))
 
 ifeq ($(ARCH),$(shell dpkg --print-architecture 2>/dev/null))
 QEMU_PARAMS += -enable-kvm
@@ -26,11 +30,15 @@ endif
 
 .PHONY: build-image
 build-image:
-	$(CONTAINER_ENGINE) build --platform $(PLATFORM) -t python-apt:$(SERIES) -f Dockerfile.$(SERIES) $(BUILD_ARGS) .
+	$(BUILD_ENGINE) build --platform $(PLATFORM) $(TAG_ARG) -f Dockerfile.$(SERIES) $(BUILD_ARGS) .
+
+.PHONY: pull-image
+pull-image:
+	$(CONTAINER_ENGINE) pull --platform $(PLATFORM) $(IMAGE_REF)
 
 .PHONY: wheel
 wheel:
-	$(CONTAINER_ENGINE) run --platform $(PLATFORM) -e ARCH=$(ARCH) -v $(PWD):/github/workspace python-apt:$(SERIES)
+	$(CONTAINER_ENGINE) run --platform $(PLATFORM) -e ARCH=$(ARCH) -v $(PWD):/github/workspace $(IMAGE_REF)
 
 prepare-image:
 	rm -f $(SERIES)-server-cloudimg-$(ARCH).img

@@ -25,11 +25,35 @@ def get_pep440_version(deb_ver: str) -> str:
         return v
 
 
+def is_workflow_modified(event: str, base_ref: str = "") -> bool:
+    try:
+        commands = []
+        if event == "pull_request" and base_ref:
+            commands.append(["git", "diff", "--name-only", f"origin/{base_ref}...HEAD"])
+            commands.append(["git", "diff", "--name-only", f"{base_ref}...HEAD"])
+        elif event == "push":
+            commands.append(["git", "diff", "--name-only", "HEAD~1", "HEAD"])
+        commands.append(["git", "diff", "--name-only", "HEAD~1"])
+
+        for cmd in commands:
+            try:
+                res = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
+                for line in res.splitlines():
+                    if line.strip().startswith(".github/workflows/"):
+                        return True
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(description="Check Launchpad and GitHub releases for python-apt wheels.")
     parser.add_argument("series", help="Ubuntu series")
     parser.add_argument("arch", help="Target architecture")
     parser.add_argument("--event", default="", help="GitHub workflow trigger event name")
+    parser.add_argument("--base-ref", default="", help="Base branch ref for pull_request")
     parser.add_argument("--target-arch", default=None, help="Target architecture for workflow_dispatch")
     parser.add_argument("--target-series", default=None, help="Target series for workflow_dispatch")
     parser.add_argument("--force", action="store_true", help="Force rebuild regardless of existing releases")
@@ -50,6 +74,11 @@ def main():
         "risc-v": "riscv64",
     }
     wheel_arch = arch_to_wheel.get(arch, arch)
+
+    if is_workflow_modified(args.event, args.base_ref):
+        print(f"Workflow file modification detected. Proceeding with build for {series} ({arch}).")
+        set_output(skip=False)
+        return
 
     if args.event == "workflow_dispatch":
         target_arch = args.target_arch or "all"
